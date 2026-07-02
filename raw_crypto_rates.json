@@ -1,0 +1,10 @@
+{
+  "vs_currencies": "usd",
+  "prices": {
+    "bitcoin": 61548,
+    "ethereum": 1696.94,
+    "solana": 80.8
+  },
+  "fetched_at": "2026-07-02T19:30:43.160799+00:00",
+  "source": "crypto"
+}

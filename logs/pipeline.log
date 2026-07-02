@@ -1,0 +1,42 @@
+2026-07-03 01:00:17,675 - INFO - ============================================================
+2026-07-03 01:00:17,675 - INFO - Pipeline Running
+
+2026-07-03 01:00:18,660 - INFO - Fetched FX rates for base=USD:{'EUR': 0.87727, 'GBP': 0.75151, 'INR': 95.39, 'JPY': 161.58}
+2026-07-03 01:00:19,135 - INFO - Fetched crypto prices: {'bitcoin': 61529, 'ethereum': 1696.61, 'solana': 80.81}
+2026-07-03 01:00:19,137 - INFO - Saved raw data locally to raw_fx_rates.json
+2026-07-03 01:00:19,139 - INFO - Saved raw data locally to raw_crypto_rates.json
+2026-07-03 01:00:19,956 - INFO - Ensured table 'asset_prices' exists
+2026-07-03 01:00:19,972 - INFO - Loaded 7 previous price(s) for anomaly comparison
+2026-07-03 01:00:19,991 - INFO - Combined 4 FX rows & 3 Crypto rows => 7 total
+2026-07-03 01:00:20,015 - INFO - All rows passed basic validation
+2026-07-03 01:00:20,019 - WARNING - Flagged 2 anomalous asset(s): ['ethereum', 'solana']
+2026-07-03 01:00:20,043 - INFO - 
+Transform stage produced 7 clean rows
+
+2026-07-03 01:00:20,043 - INFO - Ensured table 'asset_prices' exists
+2026-07-03 01:00:20,063 - INFO - Load complete: 7 inserted, 0 duplicate skipped
+2026-07-03 01:00:20,063 - INFO - 
+Pipeline run completed: 7 new rows loaded
+
+2026-07-03 01:00:20,063 - INFO - ============================================================
+2026-07-03 01:00:41,912 - INFO - ============================================================
+2026-07-03 01:00:41,924 - INFO - Pipeline Running
+
+2026-07-03 01:00:42,657 - INFO - Fetched FX rates for base=USD:{'EUR': 0.87727, 'GBP': 0.75151, 'INR': 95.39, 'JPY': 161.58}
+2026-07-03 01:00:43,160 - INFO - Fetched crypto prices: {'bitcoin': 61548, 'ethereum': 1696.94, 'solana': 80.8}
+2026-07-03 01:00:43,161 - INFO - Saved raw data locally to raw_fx_rates.json
+2026-07-03 01:00:43,162 - INFO - Saved raw data locally to raw_crypto_rates.json
+2026-07-03 01:00:43,438 - INFO - Ensured table 'asset_prices' exists
+2026-07-03 01:00:43,438 - INFO - Loaded 7 previous price(s) for anomaly comparison
+2026-07-03 01:00:43,455 - INFO - Combined 4 FX rows & 3 Crypto rows => 7 total
+2026-07-03 01:00:43,458 - INFO - All rows passed basic validation
+2026-07-03 01:00:43,459 - INFO - No anomalies detected
+2026-07-03 01:00:43,466 - INFO - 
+Transform stage produced 7 clean rows
+
+2026-07-03 01:00:43,467 - INFO - Ensured table 'asset_prices' exists
+2026-07-03 01:00:43,485 - INFO - Load complete: 0 inserted, 7 duplicate skipped
+2026-07-03 01:00:43,485 - INFO - 
+Pipeline run completed: 0 new rows loaded
+
+2026-07-03 01:00:43,485 - INFO - ============================================================
