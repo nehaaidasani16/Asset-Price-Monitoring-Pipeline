@@ -3,407 +3,501 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Airflow DAG — FX + Crypto ETL Pipeline</title>
+<title>Complete Pipeline Demo — FX + Crypto ETL</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#eef0f4;--card:#ffffff;--card2:#f7f8fa;--border:#dde1e8;--border2:#c8cdd8;--navy:#1e2d4a;--amber:#e8a020;--amber-bg:#fdf3e2;--green:#1a7a45;--green-bg:#e6f4ec;--red:#c0392b;--red-bg:#fdecea;--blue:#2563b0;--blue-bg:#e8f0fb;--purple:#5b4ab0;--text:#1a1f2e;--text2:#4a5568;--text3:#8896a8;--mono:'JetBrains Mono','Courier New',monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+:root{
+  --bg:#eef0f4;--card:#ffffff;--card2:#f7f8fa;
+  --border:#dde1e8;--border2:#c8cdd8;
+  --navy:#1e2d4a;--amber:#e8a020;--amber-bg:#fdf3e2;
+  --green:#1a7a45;--green-bg:#e6f4ec;
+  --red:#c0392b;--red-bg:#fdecea;
+  --blue:#2563b0;--blue-bg:#e8f0fb;
+  --purple:#5b4ab0;--purple-bg:#f0edfb;
+  --text:#1a1f2e;--text2:#4a5568;--text3:#8896a8;
+  --mono:'JetBrains Mono','Courier New',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
 body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.6;}
+
+/* nav */
 nav{position:sticky;top:0;z-index:100;background:rgba(238,240,244,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:0 22px;display:flex;align-items:center;justify-content:space-between;height:48px;}
-.nav-brand{font-size:11px;color:var(--navy);letter-spacing:.06em;font-weight:700;}
+.nav-brand{font-size:11px;color:var(--navy);font-weight:700;letter-spacing:.06em;}
 .nav-links{display:flex;}
-.nav-links a{font-size:10.5px;color:var(--text3);text-decoration:none;padding:0 12px;height:48px;display:flex;align-items:center;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;}
-.nav-links a:hover{color:var(--text);}.nav-links a.active{color:var(--navy);border-bottom-color:var(--amber);}
-.wrap{display:flex;flex-direction:column;align-items:center;width:100%;padding:20px 16px 60px;}
-.card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;width:100%;max-width:880px;box-shadow:0 2px 12px rgba(30,45,74,.07);margin-bottom:20px;}
+.nav-links a{font-size:10.5px;color:var(--text3);text-decoration:none;padding:0 13px;height:48px;display:flex;align-items:center;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;}
+.nav-links a:hover{color:var(--text);}
+.nav-links a.active{color:var(--navy);border-bottom-color:var(--amber);}
+
+/* wrap */
+.wrap{max-width:960px;margin:0 auto;padding:24px 16px 64px;}
+
+/* section header */
+.section-header{display:flex;align-items:center;gap:14px;margin:36px 0 16px;}
+.step-badge{width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-title{font-size:18px;font-weight:700;color:var(--navy);}
+.step-sub{font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--sans);}
+.connector-between{display:flex;align-items:center;gap:12px;margin:8px 0 8px 15px;}
+.connector-line-v{width:2px;height:40px;background:var(--border2);margin-left:15px;}
+.connector-label{font-size:10px;color:var(--text3);margin-left:10px;letter-spacing:.08em;text-transform:uppercase;}
+
+/* card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(30,45,74,.07);margin-bottom:6px;}
 .topbar{background:var(--navy);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:3px solid var(--amber);flex-wrap:wrap;}
 .topbar-left{display:flex;align-items:center;gap:8px;}
 .mac{width:11px;height:11px;border-radius:50%;}
 .topbar-title{color:#dce8f5;font-size:11px;margin-left:6px;font-weight:700;}
-.topbar-right{display:flex;align-items:center;gap:10px;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
 .run-badge{background:var(--green);color:#fff;font-size:9px;padding:2px 9px;border-radius:3px;font-weight:700;}
-.body{padding:24px;}
-.sec-label{font-size:9.5px;color:var(--amber);letter-spacing:.14em;text-transform:uppercase;margin-bottom:9px;}
-.sec-title{font-size:17px;font-weight:700;color:var(--navy);margin-bottom:5px;}
-.sec-sub{font-size:12.5px;color:var(--text2);margin-bottom:22px;line-height:1.65;font-family:var(--sans);}
-/* DAG graph area */
-.dag-area{background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:28px 20px;overflow-x:auto;margin-bottom:20px;}
-/* task cards grid */
-.task-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px;}
-.task-card{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;}
-.task-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.body{padding:22px 24px;}
+.sec-label{font-size:9.5px;color:var(--amber);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;}
+.sec-sub{font-size:12px;color:var(--text2);line-height:1.65;font-family:var(--sans);margin-bottom:16px;}
+
+/* ── SECTION 1: AIRFLOW ── */
+.dag-area{background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:24px 20px;overflow-x:auto;margin-bottom:18px;}
+.meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-radius:8px;overflow:hidden;border:1px solid var(--border);margin-bottom:18px;}
+.meta-cell{background:var(--card2);padding:11px 14px;}
+.meta-label{font-size:9px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;}
+.meta-val{font-size:12.5px;font-weight:700;color:var(--navy);}
+.meta-val.ok{color:var(--green);}
+.task-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.task-card{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:13px 14px;}
+.task-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
 .task-name{font-size:12px;font-weight:700;color:var(--navy);}
 .task-status{font-size:9px;padding:2px 8px;border-radius:3px;font-weight:700;}
 .ts-ok{background:var(--green-bg);color:var(--green);}
-.ts-retry{background:var(--amber-bg);color:#b05a00;}
-.ts-fail{background:var(--red-bg);color:var(--red);}
-.task-dur{font-size:10px;color:var(--text3);margin-bottom:6px;}
-.task-desc{font-size:11.5px;color:var(--text2);line-height:1.55;font-family:var(--sans);}
-/* meta grid */
-.meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-radius:8px;overflow:hidden;border:1px solid var(--border);margin-bottom:22px;}
-.meta-cell{background:var(--card2);padding:12px 16px;}
-.meta-label{font-size:9px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
-.meta-val{font-size:12.5px;font-weight:700;color:var(--navy);}
-.meta-val.ok{color:var(--green);}
-/* code */
-.code-box{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-size:10.5px;color:var(--text2);line-height:1.7;overflow-x:auto;}
-.ck{color:var(--purple);}.cc{color:var(--text3);}
-/* note */
-.note{padding:12px 15px;border-left:3px solid var(--amber);background:var(--amber-bg);font-size:11.5px;color:var(--text2);line-height:1.7;font-family:var(--sans);}
-footer{border-top:1px solid var(--border);padding:18px 24px;text-align:center;font-size:10px;color:var(--text3);background:var(--bg);}
-/* about daily schedule note */
-.schedule-note{background:var(--blue-bg);border:1px solid #b8d0f5;border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:12px;color:#1a3a6e;line-height:1.65;font-family:var(--sans);}
-.schedule-note strong{color:var(--navy);}
-</style>
-</head>
-<body>
-<nav>
-  <div class="nav-brand">asset_price_pipeline · Airflow DAG</div>
-</nav>
-<div class="wrap">
+.task-dur{font-size:10px;color:var(--text3);margin-bottom:5px;}
+.task-desc{font-size:11px;color:var(--text2);line-height:1.55;font-family:var(--sans);}
+.schedule-note{background:var(--blue-bg);border:1px solid #b8d0f5;border-radius:7px;padding:12px 15px;margin-bottom:18px;font-size:12px;color:#1a3a6e;line-height:1.65;font-family:var(--sans);}
+.code-box{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:10px 13px;font-size:10.5px;color:var(--text2);line-height:1.7;margin-bottom:12px;}
+.cc{color:var(--text3);}
 
-<div class="card">
-  <div class="topbar">
-    <div class="topbar-left">
-      <div class="mac" style="background:#ff5f57"></div><div class="mac" style="background:#ffbd2e"></div><div class="mac" style="background:#28c840"></div>
-      <span class="topbar-title">Apache Airflow 2.10.4 · localhost:8080 · DAG: asset_price_pipeline</span>
-    </div>
-    <div class="topbar-right">
-      <span class="run-badge">● last run: success</span>
-      <span style="color:#a0b8d0;font-size:10px;">2026-07-04 03:04 IST</span>
-    </div>
-  </div>
-  <div class="body">
-    <div class="sec-label">Orchestration</div>
-    <div class="sec-title">Airflow DAG — Graph View</div>
-    <p class="sec-sub">Four tasks with explicit dependency management. Both extract tasks run in parallel. Transform waits for both. Load waits for transform. All runs write to a single unified pipeline.log.</p>
+/* ── SECTION 2: PIPELINE TERMINAL ── */
+.terminal{background:#141c2e;border-radius:0 0 10px 10px;overflow:hidden;}
+.term-topbar{background:#0f1420;padding:10px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #2a3548;}
+.term-filename{color:#6a7fa0;font-size:11px;margin-left:6px;}
+.progress-bar{height:3px;background:var(--amber);width:0;transition:width .08s linear;}
+.term-body{padding:16px 20px;font-size:11.5px;line-height:1.9;min-height:380px;max-height:560px;overflow-y:auto;color:#c8d6e8;}
+.line{opacity:0;transform:translateY(3px);transition:opacity .22s ease,transform .22s ease;}
+.line.show{opacity:1;transform:translateY(0);}
+.t-prompt{color:#3ecf7a;}.t-cmd{color:#e8edf5;}.t-info{color:#60a5fa;}.t-engine{color:#a78bfa;}
+.t-ok{color:#3ecf7a;}.t-warn{color:#e8a020;}.t-err{color:#f47068;}.t-dim{color:#506080;}
+.t-result{color:#67e8f9;}.t-sep{color:#2e3a52;}.t-stage{color:#fb923c;font-weight:700;}
+.t-cursor{display:inline-block;width:8px;height:13px;background:#3ecf7a;margin-left:2px;animation:blink .8s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.run-btn{background:#2563b0;color:#fff;border:none;border-radius:6px;padding:9px 22px;font-size:11.5px;font-family:var(--mono);cursor:pointer;margin:10px 20px 16px;display:block;transition:background .2s;letter-spacing:.04em;font-weight:700;}
+.run-btn:hover{background:#1d4ed8;}
+.run-btn:disabled{opacity:.6;cursor:default;}
 
-    <!-- About daily schedule -->
-    <div class="schedule-note">
-      <strong>About the @daily schedule:</strong> When running locally, Airflow requires both the <strong>webserver</strong> (<code>airflow webserver --port 8080</code>) and <strong>scheduler</strong> (<code>airflow scheduler</code>) to be running simultaneously in separate terminals. The @daily schedule triggers automatically once both are active — the scheduler watches for the next scheduled interval and executes the DAG without manual intervention. The pipeline can also be triggered manually at any time via the ▶ button in the UI.
-    </div>
-
-    <!-- DAG graph SVG — realistic Airflow style -->
-    <div class="dag-area">
-      <svg width="100%" viewBox="0 0 740 220" style="min-width:500px;display:block;font-family:'JetBrains Mono','Courier New',monospace;">
-        <!-- breadcrumb -->
-        <text x="10" y="18" font-size="10" fill="#8896a8">DAGs / asset_price_pipeline / Graph — Run: 2026-07-04, 03:04:51 IST</text>
-        <!-- extract_fx_task -->
-        <rect x="30" y="40" width="160" height="66" rx="5" fill="#e6f4ec" stroke="#1a7a45" stroke-width="2"/>
-        <text x="110" y="62" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a7a45">extract_fx_task</text>
-        <circle cx="55" cy="79" r="5" fill="#1a7a45"/>
-        <text x="65" y="83" font-size="10" fill="#1a7a45">success</text>
-        <text x="110" y="99" text-anchor="middle" font-size="9" fill="#6b9f7a">PythonOperator</text>
-        <!-- extract_crypto_task -->
-        <rect x="30" y="130" width="160" height="66" rx="5" fill="#e6f4ec" stroke="#1a7a45" stroke-width="2"/>
-        <text x="110" y="152" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a7a45">extract_crypto_task</text>
-        <circle cx="55" cy="169" r="5" fill="#1a7a45"/>
-        <text x="65" y="173" font-size="10" fill="#1a7a45">success</text>
-        <text x="110" y="189" text-anchor="middle" font-size="9" fill="#6b9f7a">PythonOperator</text>
-        <!-- parallel label -->
-        <text x="110" y="28" text-anchor="middle" font-size="9" fill="#8896a8">parallel ↕</text>
-        <line x1="110" y1="31" x2="110" y2="39" stroke="#c8cdd8" stroke-width="1" stroke-dasharray="2 2"/>
-        <!-- arrows to transform -->
-        <line x1="190" y1="73" x2="280" y2="123" stroke="#8896a8" stroke-width="1.5" marker-end="url(#arr)"/>
-        <line x1="190" y1="163" x2="280" y2="143" stroke="#8896a8" stroke-width="1.5" marker-end="url(#arr)"/>
-        <!-- transform_task -->
-        <rect x="280" y="103" width="160" height="66" rx="5" fill="#e6f4ec" stroke="#1a7a45" stroke-width="2"/>
-        <text x="360" y="125" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a7a45">transform_task</text>
-        <circle cx="305" cy="142" r="5" fill="#1a7a45"/>
-        <text x="315" y="146" font-size="10" fill="#1a7a45">success</text>
-        <text x="360" y="162" text-anchor="middle" font-size="9" fill="#6b9f7a">PythonOperator</text>
-        <!-- arrow to load -->
-        <line x1="440" y1="136" x2="510" y2="136" stroke="#8896a8" stroke-width="1.5" marker-end="url(#arr)"/>
-        <!-- load_task -->
-        <rect x="510" y="103" width="160" height="66" rx="5" fill="#e6f4ec" stroke="#1a7a45" stroke-width="2"/>
-        <text x="590" y="125" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a7a45">load_task</text>
-        <circle cx="535" cy="142" r="5" fill="#1a7a45"/>
-        <text x="545" y="146" font-size="10" fill="#1a7a45">success</text>
-        <text x="590" y="162" text-anchor="middle" font-size="9" fill="#6b9f7a">PythonOperator</text>
-        <!-- dependency label -->
-        <text x="460" y="128" text-anchor="middle" font-size="9" fill="#8896a8">→</text>
-        <defs>
-          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M2 1L8 5L2 9" fill="none" stroke="#8896a8" stroke-width="1.5" stroke-linecap="round"/>
-          </marker>
-        </defs>
-      </svg>
-    </div>
-
-    <!-- run metadata -->
-    <div class="meta-grid">
-      <div class="meta-cell"><div class="meta-label">Status</div><div class="meta-val ok">● success</div></div>
-      <div class="meta-cell"><div class="meta-label">Run Duration</div><div class="meta-val">00:05:53</div></div>
-      <div class="meta-cell"><div class="meta-label">Schedule</div><div class="meta-val">@daily</div></div>
-      <div class="meta-cell"><div class="meta-label">Executor</div><div class="meta-val">SequentialExecutor</div></div>
-      <div class="meta-cell"><div class="meta-label">Started</div><div class="meta-val">2026-07-04 03:04:52 IST</div></div>
-      <div class="meta-cell"><div class="meta-label">Ended</div><div class="meta-val">2026-07-04 03:10:46 IST</div></div>
-    </div>
-
-    <!-- task detail cards -->
-    <div class="task-grid">
-      <div class="task-card">
-        <div class="task-header"><span class="task-name">extract_fx_task</span><span class="task-status ts-ok">success</span></div>
-        <div class="task-dur">~1 sec · try 1/3 · PythonOperator</div>
-        <div class="task-desc">Calls Frankfurter API. Returns None on failure — pipeline continues with crypto-only data.</div>
-      </div>
-      <div class="task-card">
-        <div class="task-header"><span class="task-name">extract_crypto_task</span><span class="task-status ts-ok">success</span></div>
-        <div class="task-dur">~1 sec · try 1/3 · PythonOperator</div>
-        <div class="task-desc">Calls CoinGecko API simultaneously. Both extracts complete before transform begins.</div>
-      </div>
-      <div class="task-card">
-        <div class="task-header"><span class="task-name">transform_task</span><span class="task-status ts-ok">success</span></div>
-        <div class="task-dur">~1 sec · after both extracts · PythonOperator</div>
-        <div class="task-desc">Pulls XCom results. Flattens, validates, runs anomaly detection. Writes pipeline.log entries.</div>
-      </div>
-      <div class="task-card">
-        <div class="task-header"><span class="task-name">load_task</span><span class="task-status ts-ok">success</span></div>
-        <div class="task-dur">~30 sec · after transform · PythonOperator</div>
-        <div class="task-desc">Idempotent PostgreSQL insert. Logs rows inserted vs. skipped. Writes final audit separator.</div>
-      </div>
-    </div>
-
-    <!-- DAG code -->
-    <div class="sec-label">DAG dependency definition</div>
-    <div class="code-box"><span class="cc"># asset_price_pipeline_dag.py</span>
-<span class="cc"># extract tasks run in PARALLEL, transform waits for BOTH</span>
-
-[extract_fx_task, extract_crypto_task] >> transform_task >> load_task
-
-<span class="cc"># default_args: retries=2, retry_delay=timedelta(minutes=3)</span>
-<span class="cc"># schedule='@daily', catchup=False, start_date=datetime(2026,6,1)</span></div>
-
-    <div class="note" style="margin-top:16px;">All four tasks write to a single <strong>pipeline.log</strong> file regardless of whether the run was triggered manually or by the scheduler — creating one unified audit trail per run with timestamps, task labels, and anomaly warnings.</div>
-  </div>
-</div>
-</div>
-</body>
-</html>
-
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Output Results — FX + Crypto ETL Pipeline</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#eef0f4;--card:#ffffff;--card2:#f7f8fa;--border:#dde1e8;--border2:#c8cdd8;--navy:#1e2d4a;--amber:#e8a020;--amber-bg:#fdf3e2;--green:#1a7a45;--green-bg:#e6f4ec;--red:#c0392b;--red-bg:#fdecea;--blue:#2563b0;--blue-bg:#e8f0fb;--purple:#5b4ab0;--text:#1a1f2e;--text2:#4a5568;--text3:#8896a8;--mono:'JetBrains Mono','Courier New',monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.6;}
-nav{position:sticky;top:0;z-index:100;background:rgba(238,240,244,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:0 22px;display:flex;align-items:center;justify-content:space-between;height:48px;}
-.nav-brand{font-size:11px;color:var(--navy);letter-spacing:.06em;font-weight:700;}
-.nav-links{display:flex;}
-.nav-links a{font-size:10.5px;color:var(--text3);text-decoration:none;padding:0 12px;height:48px;display:flex;align-items:center;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;}
-.nav-links a:hover{color:var(--text);}.nav-links a.active{color:var(--navy);border-bottom-color:var(--amber);}
-.wrap{display:flex;flex-direction:column;align-items:center;width:100%;padding:20px 16px 60px;}
-.card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;width:100%;max-width:980px;box-shadow:0 2px 12px rgba(30,45,74,.07);margin-bottom:20px;}
-.topbar{background:var(--navy);padding:11px 18px;display:flex;align-items:center;gap:8px;border-bottom:3px solid var(--amber);}
-.mac{width:11px;height:11px;border-radius:50%;}
-.topbar-title{color:#dce8f5;font-size:11px;margin-left:6px;font-weight:700;}
-.body{padding:24px;}
-.sec-label{font-size:9.5px;color:var(--amber);letter-spacing:.14em;text-transform:uppercase;margin-bottom:9px;}
-.sec-title{font-size:17px;font-weight:700;color:var(--navy);margin-bottom:5px;}
-.sec-sub{font-size:12.5px;color:var(--text2);margin-bottom:20px;line-height:1.65;font-family:var(--sans);}
-.stat-strip{display:flex;gap:1px;background:var(--border);border-radius:8px;overflow:hidden;border:1px solid var(--border);margin-bottom:20px;flex-wrap:wrap;}
+/* ── SECTION 3: OUTPUT ── */
+.stat-strip{display:flex;gap:1px;background:var(--border);border-radius:8px;overflow:hidden;border:1px solid var(--border);margin-bottom:18px;flex-wrap:wrap;}
 .stat-cell{flex:1;min-width:100px;background:var(--card);padding:13px 10px;text-align:center;}
 .stat-val{font-size:19px;font-weight:700;color:var(--navy);display:block;margin-bottom:3px;}
 .stat-val.ok{color:var(--green);}.stat-val.warn{color:#b05a00;}
 .stat-lbl{font-size:9px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;}
+.pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);vertical-align:middle;margin-right:4px;animation:pulse 2s infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(26,122,69,.4)}70%{box-shadow:0 0 0 5px rgba(26,122,69,0)}100%{box-shadow:0 0 0 0 rgba(26,122,69,0)}}
 .query-bar{padding:10px 16px;background:#f0f4fb;border-bottom:1px solid var(--border);font-size:11px;color:var(--text2);}
 .kw{color:var(--blue);font-weight:700;}.tbl{color:var(--green);font-weight:700;}
 table{width:100%;border-collapse:collapse;}
 thead th{text-align:left;background:var(--navy);color:#dce8f5;font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;padding:9px 10px;white-space:nowrap;}
-tbody td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);font-size:11px;}
+tbody td{padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;}
 tbody tr:nth-child(even){background:#fafbfc;}
 tbody tr.flagged{background:var(--red-bg)!important;}
 tbody tr.flagged td{color:var(--red);}
 tbody tr.date-sep td{background:#edf1f7;font-size:9px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border-bottom:1px solid var(--border2);font-weight:700;}
-tbody tr.note-row td{background:#fdf3e2;font-size:10px;color:#8a5e0a;padding:5px 10px;border-bottom:1px solid #f0ddb0;font-style:italic;}
 .badge{display:inline-block;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
 .badge-fx{background:var(--amber-bg);color:#8a5e0a;}
 .badge-crypto{background:var(--blue-bg);color:var(--blue);}
 .badge-ok{background:var(--green-bg);color:var(--green);}
 .badge-flag{background:var(--red-bg);color:var(--red);}
-.badge-old{background:#f0edfb;color:#5b4ab0;}
-.price{text-align:right;font-weight:700;font-size:11.5px;}
+.price{text-align:right;font-weight:700;}
 .ts{color:var(--text3);font-size:9.5px;}
 .tbl-footer{padding:9px 14px;font-size:10px;color:var(--text3);border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;}
 .note{margin-top:14px;padding:12px 15px;border-left:3px solid var(--amber);background:var(--amber-bg);font-size:11.5px;color:var(--text2);line-height:1.7;font-family:var(--sans);}
 .note .hl{color:var(--green);font-weight:700;}.note .hlw{color:#b05a00;font-weight:700;}
 .info-box{margin-top:12px;padding:12px 15px;border-left:3px solid var(--blue);background:var(--blue-bg);font-size:11.5px;color:#1a3a6e;line-height:1.7;font-family:var(--sans);}
-.log-wrap{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:22px;}
+.log-wrap{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:20px;}
 .log-topbar{background:var(--navy);padding:9px 14px;display:flex;align-items:center;gap:8px;}
-.log-body{padding:14px 16px;background:#f4f6fa;font-size:11px;line-height:1.85;max-height:270px;overflow-y:auto;}
+.log-body{padding:14px 16px;background:#f4f6fa;font-size:11px;line-height:1.85;max-height:260px;overflow-y:auto;}
 .li{color:#1d5fa8;}.lw{color:#b05a00;}.lk{color:var(--green);}.ld{color:var(--text3);}.ls{color:var(--border2);}
-footer{border-top:1px solid var(--border);padding:18px 24px;text-align:center;font-size:10px;color:var(--text3);background:var(--bg);}
+
+footer{border-top:1px solid var(--border);padding:18px 24px;text-align:center;font-size:10px;color:var(--text3);background:var(--bg);margin-top:12px;}
 </style>
 </head>
 <body>
+
 <nav>
-  <div class="nav-brand">asset_price_pipeline · Output Results</div>
+  <div class="nav-brand">asset_price_pipeline · Complete Demo</div>
 </nav>
+
 <div class="wrap">
 
-<div class="card">
-  <div class="topbar">
-    <div class="mac" style="background:#ff5f57"></div>
-    <div class="mac" style="background:#ffbd2e"></div>
-    <div class="mac" style="background:#28c840"></div>
-    <span class="topbar-title">asset_prices — REAL data · PostgreSQL: asset_rates · 6 days of production runs</span>
+<!-- ═══════════════════════════════════════════════════
+     SECTION 1 — AIRFLOW DAG
+═══════════════════════════════════════════════════ -->
+<div id="airflow">
+  <div class="section-header">
+    <div class="step-badge">1</div>
+    <div>
+      <div class="step-title">Airflow orchestrates </div>
+      <div class="step-sub">Scheduler fires @daily · 4 tasks · parallel extracts → transform → load</div>
+    </div>
   </div>
-  <div class="body">
-    <div class="sec-label">Real pipeline output — live database</div>
-    <div class="sec-title">asset_prices — 6 days of actual pipeline runs</div>
-    <p class="sec-sub">Every row below is real data extracted by the live pipeline. 5 FX currencies + 3 crypto coins from July 7. CAD added on July 6 replacing AED (Frankfurter API doesn't support AED). 2 real anomalies on July 2 — ethereum and solana both flagged.</p>
 
-    <div class="stat-strip">
-      <div class="stat-cell"><span class="stat-val">54</span><span class="stat-lbl">Total Rows</span></div>
-      <div class="stat-cell"><span class="stat-val">6</span><span class="stat-lbl">Days Tracked</span></div>
-      <div class="stat-cell"><span class="stat-val">5</span><span class="stat-lbl">FX Symbols</span></div>
-      <div class="stat-cell"><span class="stat-val">3</span><span class="stat-lbl">Crypto Coins</span></div>
-      <div class="stat-cell"><span class="stat-val warn">2</span><span class="stat-lbl">Anomalies</span></div>
-      <div class="stat-cell"><span class="stat-val ok">0</span><span class="stat-lbl">Duplicates</span></div>
-      <div class="stat-cell"><span class="stat-val ok">12/12</span><span class="stat-lbl">Tests Passing</span></div>
-    </div>
-
-    <div class="query-bar">$ psql -d asset_rates -c "<span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">asset_prices</span> <span class="kw">ORDER BY</span> as_of_date <span class="kw">DESC</span>, asset_type, asset_symbol;"</div>
-
-    <div style="overflow-x:auto;">
-    <table>
-      <thead>
-        <tr><th>asset_type</th><th>asset_symbol</th><th>price</th><th>as_of_date</th><th>fetched_at (UTC)</th><th>is_anomaly</th></tr>
-      </thead>
-      <tbody>
-
-        <!-- 2026-07-07 -->
-        <tr class="date-sep"><td colspan="6">2026-07-07 &nbsp;·&nbsp; 8 rows &nbsp;·&nbsp; 5 FX + 3 crypto &nbsp;·&nbsp; 0 anomalies &nbsp;·&nbsp; CAD now tracked</td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>bitcoin</td><td class="price">62,839.0000</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:38</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>ethereum</td><td class="price">1,758.5400</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:38</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>solana</td><td class="price">80.4800</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:38</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>CAD</td><td class="price">1.4223</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:09</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>EUR</td><td class="price">0.87604</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:09</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>GBP</td><td class="price">0.74935</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:09</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>INR</td><td class="price">95.4000</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:09</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>JPY</td><td class="price">162.3400</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:09</td><td><span class="badge badge-ok">false</span></td></tr>
-
-        <!-- 2026-07-06 -->
-        <tr class="date-sep"><td colspan="6">2026-07-06 &nbsp;·&nbsp; 8 rows &nbsp;·&nbsp; 5 FX + 3 crypto &nbsp;·&nbsp; 0 anomalies &nbsp;·&nbsp; CAD added mid-day (separate run)</td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>bitcoin</td><td class="price">62,866.0000</td><td>2026-07-06</td><td class="ts">2026-07-06T07:06:44</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>ethereum</td><td class="price">1,768.0200</td><td>2026-07-06</td><td class="ts">2026-07-06T07:06:44</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>solana</td><td class="price">80.3000</td><td>2026-07-06</td><td class="ts">2026-07-06T07:06:44</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>CAD</td><td class="price">1.4223</td><td>2026-07-06</td><td class="ts">2026-07-06T20:43:07</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>EUR</td><td class="price">0.87352</td><td>2026-07-06</td><td class="ts">2026-07-06T07:05:45</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>GBP</td><td class="price">0.74878</td><td>2026-07-06</td><td class="ts">2026-07-06T07:05:45</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>INR</td><td class="price">95.2100</td><td>2026-07-06</td><td class="ts">2026-07-06T07:05:45</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>JPY</td><td class="price">161.1500</td><td>2026-07-06</td><td class="ts">2026-07-06T07:05:45</td><td><span class="badge badge-ok">false</span></td></tr>
-
-        <!-- 2026-07-05 -->
-        <tr class="date-sep"><td colspan="6">2026-07-05 &nbsp;·&nbsp; 7 rows &nbsp;·&nbsp; 4 FX + 3 crypto &nbsp;·&nbsp; 0 anomalies &nbsp;·&nbsp; run at 02:28 UTC (before ECB 15:00 publish)</td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>bitcoin</td><td class="price">62,672.0000</td><td>2026-07-05</td><td class="ts">2026-07-05T02:30:12</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>ethereum</td><td class="price">1,760.9500</td><td>2026-07-05</td><td class="ts">2026-07-05T02:30:12</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>solana</td><td class="price">80.4200</td><td>2026-07-05</td><td class="ts">2026-07-05T02:30:12</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>EUR</td><td class="price">0.87352</td><td>2026-07-05</td><td class="ts">2026-07-05T02:28:40</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>GBP</td><td class="price">0.74878</td><td>2026-07-05</td><td class="ts">2026-07-05T02:28:40</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>INR</td><td class="price">95.2100</td><td>2026-07-05</td><td class="ts">2026-07-05T02:28:40</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>JPY</td><td class="price">161.1500</td><td>2026-07-05</td><td class="ts">2026-07-05T02:28:40</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr class="note-row"><td colspan="6">FX rates match July 3 — ECB had not yet published by 02:28 UTC. Pipeline correctly stored available data.</td></tr>
-
-        <!-- 2026-07-04 -->
-        <tr class="date-sep"><td colspan="6">2026-07-04 &nbsp;·&nbsp; 7 rows &nbsp;·&nbsp; 4 FX + 3 crypto &nbsp;·&nbsp; 0 anomalies</td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>bitcoin</td><td class="price">62,486.0000</td><td>2026-07-04</td><td class="ts">2026-07-04T08:08:49</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>ethereum</td><td class="price">1,757.5900</td><td>2026-07-04</td><td class="ts">2026-07-04T08:08:49</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>solana</td><td class="price">82.5500</td><td>2026-07-04</td><td class="ts">2026-07-04T08:08:49</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>EUR</td><td class="price">0.87352</td><td>2026-07-04</td><td class="ts">2026-07-04T12:56:23</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>GBP</td><td class="price">0.74878</td><td>2026-07-04</td><td class="ts">2026-07-04T12:56:23</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>INR</td><td class="price">95.2100</td><td>2026-07-04</td><td class="ts">2026-07-04T12:56:23</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>JPY</td><td class="price">161.1500</td><td>2026-07-04</td><td class="ts">2026-07-04T12:56:23</td><td><span class="badge badge-ok">false</span></td></tr>
-
-        <!-- 2026-07-03 -->
-        <tr class="date-sep"><td colspan="6">2026-07-03 &nbsp;·&nbsp; 7 rows &nbsp;·&nbsp; 4 FX + 3 crypto &nbsp;·&nbsp; 0 anomalies</td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>bitcoin</td><td class="price">61,695.0000</td><td>2026-07-03</td><td class="ts">2026-07-03T08:05:20</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>ethereum</td><td class="price">1,715.4800</td><td>2026-07-03</td><td class="ts">2026-07-03T08:05:20</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>solana</td><td class="price">81.1700</td><td>2026-07-03</td><td class="ts">2026-07-03T08:05:20</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>EUR</td><td class="price">0.87352</td><td>2026-07-03</td><td class="ts">2026-07-03T16:57:54</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>GBP</td><td class="price">0.74878</td><td>2026-07-03</td><td class="ts">2026-07-03T16:57:54</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>INR</td><td class="price">95.2100</td><td>2026-07-03</td><td class="ts">2026-07-03T16:57:54</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>JPY</td><td class="price">161.1500</td><td>2026-07-03</td><td class="ts">2026-07-03T16:57:54</td><td><span class="badge badge-ok">false</span></td></tr>
-
-        <!-- 2026-07-02 -->
-        <tr class="date-sep"><td colspan="6">2026-07-02 &nbsp;·&nbsp; 7 rows &nbsp;·&nbsp; 4 FX + 3 crypto &nbsp;·&nbsp; ⚠ 2 ANOMALIES (ethereum, solana)</td></tr>
-        <tr><td><span class="badge badge-crypto">crypto</span></td><td>bitcoin</td><td class="price">61,529.0000</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:19</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr class="flagged"><td><span class="badge badge-crypto">crypto</span></td><td>ethereum</td><td class="price">1,696.6100</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:19</td><td><span class="badge badge-flag">⚠ true</span></td></tr>
-        <tr class="flagged"><td><span class="badge badge-crypto">crypto</span></td><td>solana</td><td class="price">80.8100</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:19</td><td><span class="badge badge-flag">⚠ true</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>EUR</td><td class="price">0.87727</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:18</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>GBP</td><td class="price">0.75151</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:18</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>INR</td><td class="price">95.3900</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:18</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-fx">fx</span></td><td>JPY</td><td class="price">161.5800</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:18</td><td><span class="badge badge-ok">false</span></td></tr>
-
-        <!-- 2026-06-30 -->
-        <tr class="date-sep"><td colspan="6">2026-06-30 &nbsp;·&nbsp; 3 rows &nbsp;·&nbsp; crypto only &nbsp;·&nbsp; early run (asset_type was uppercase before casing fix)</td></tr>
-        <tr><td><span class="badge badge-old">CRYPTO</span></td><td>bitcoin</td><td class="price">59,230.0000</td><td>2026-06-30</td><td class="ts">2026-06-30T08:56:29</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-old">CRYPTO</span></td><td>ethereum</td><td class="price">1,580.8400</td><td>2026-06-30</td><td class="ts">2026-06-30T08:56:29</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-old">CRYPTO</span></td><td>solana</td><td class="price">73.3400</td><td>2026-06-30</td><td class="ts">2026-06-30T08:56:29</td><td><span class="badge badge-ok">false</span></td></tr>
-
-        <!-- 2026-06-29 -->
-        <tr class="date-sep"><td colspan="6">2026-06-29 &nbsp;·&nbsp; 7 rows &nbsp;·&nbsp; first full run with FX + crypto &nbsp;·&nbsp; uppercase asset_type (pre-fix)</td></tr>
-        <tr><td><span class="badge badge-old">CRYPTO</span></td><td>bitcoin</td><td class="price">59,471.0000</td><td>2026-06-29</td><td class="ts">2026-06-29T14:36:59</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-old">CRYPTO</span></td><td>ethereum</td><td class="price">1,571.3600</td><td>2026-06-29</td><td class="ts">2026-06-29T14:36:59</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-old">CRYPTO</span></td><td>solana</td><td class="price">73.1800</td><td>2026-06-29</td><td class="ts">2026-06-29T14:36:59</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-old">FX</span></td><td>EUR</td><td class="price">0.87673</td><td>2026-06-29</td><td class="ts">2026-06-29T14:36:58</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-old">FX</span></td><td>GBP</td><td class="price">0.75587</td><td>2026-06-29</td><td class="ts">2026-06-29T14:36:58</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-old">FX</span></td><td>INR</td><td class="price">94.5500</td><td>2026-06-29</td><td class="ts">2026-06-29T14:36:58</td><td><span class="badge badge-ok">false</span></td></tr>
-        <tr><td><span class="badge badge-old">FX</span></td><td>JPY</td><td class="price">161.8600</td><td>2026-06-29</td><td class="ts">2026-06-29T14:36:58</td><td><span class="badge badge-ok">false</span></td></tr>
-
-      </tbody>
-    </table>
-    </div>
-    <div class="tbl-footer">
-      <span>54 total rows · 8 dates · 2 real anomalies (ethereum + solana on 2026-07-02) · 0 duplicates ever</span>
-      <span>Real data from asset_rates PostgreSQL · pipeline running since 2026-06-29</span>
-    </div>
-
-    <div class="note">
-      <strong>Real anomalies on July 2:</strong> ethereum and solana both flagged — their prices had moved more than <span class="hlw">5%</span> vs. the previous stored values from June 30. The pipeline <span class="hl">preserved both rows</span> with <code>is_anomaly=True</code> rather than silently dropping them, exactly as designed for financial data systems.
-    </div>
-
-    <div class="info-box">
-      <strong>Why FX rates look identical July 3–6:</strong> The ECB (European Central Bank) publishes exchange rates once per day at ~15:00 UTC. Runs on July 3 (16:57 UTC) got fresh rates. All subsequent runs on July 4, 5, 6 executed before 15:00 UTC, so Frankfurter returned the same July 3 publication. This is correct API behaviour — the pipeline faithfully records what was available at fetch time. <strong>Crypto prices (bitcoin, ethereum, solana) change continuously</strong> and show genuine movement every day since CoinGecko updates in real time.
-    </div>
-
-    <!-- audit log -->
-    <div class="sec-label" style="margin-top:24px;">Audit log — pipeline.log (most recent run · July 7)</div>
-    <div class="log-wrap">
-      <div class="log-topbar">
-        <div class="mac" style="background:#ff5f57"></div><div class="mac" style="background:#ffbd2e"></div><div class="mac" style="background:#28c840"></div>
-        <span style="color:#dce8f5;font-size:10.5px;margin-left:6px;">~/airflow/dags/logs/pipeline.log</span>
+  <div class="card">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="mac" style="background:#ff5f57"></div>
+        <div class="mac" style="background:#ffbd2e"></div>
+        <div class="mac" style="background:#28c840"></div>
+        <span class="topbar-title">Apache Airflow 2.10.4 · localhost:8080 · DAG: asset_price_pipeline</span>
       </div>
-      <div class="log-body">
-        <div class="ls">════════════════════════════════════════════════════════</div>
-        <div class="li">2026-07-07 05:23:08 - INFO  - [extract_fx_task] started | run_id=scheduled__2026-07-06</div>
-        <div class="li">2026-07-07 05:23:09 - INFO  - Fetched FX rates for base=USD:{CAD: 1.4223, EUR: 0.87604, GBP: 0.74935, INR: 95.4, JPY: 162.34}</div>
-        <div class="li">2026-07-07 05:23:09 - INFO  - [extract_fx_task] raw FX data saved</div>
-        <div class="li">2026-07-07 05:23:09 - INFO  - [extract_fx_task] completed</div>
-        <div class="ls">────────────────────────────────────────────────────────</div>
-        <div class="li">2026-07-07 05:23:37 - INFO  - [extract_crypto_task] started | run_id=scheduled__2026-07-06</div>
-        <div class="li">2026-07-07 05:23:38 - INFO  - Fetched crypto prices: {bitcoin: 62839, ethereum: 1758.54, solana: 80.48}</div>
-        <div class="li">2026-07-07 05:23:38 - INFO  - [extract_crypto_task] raw crypto data saved</div>
-        <div class="li">2026-07-07 05:23:38 - INFO  - [extract_crypto_task] completed</div>
-        <div class="ls">────────────────────────────────────────────────────────</div>
-        <div class="li">2026-07-07 05:23:39 - INFO  - [transform_task] started | run_id=scheduled__2026-07-06</div>
-        <div class="li">2026-07-07 05:23:39 - INFO  - Combined 5 FX rows &amp; 3 Crypto rows =&gt; 8 total</div>
-        <div class="li">2026-07-07 05:23:39 - INFO  - All rows passed basic validation</div>
-        <div class="li">2026-07-07 05:23:39 - INFO  - No anomalies detected</div>
-        <div class="li">2026-07-07 05:23:39 - INFO  - [transform_task] 8 rows | 0 anomalies flagged</div>
-        <div class="li">2026-07-07 05:23:39 - INFO  - [transform_task] completed</div>
-        <div class="ls">────────────────────────────────────────────────────────</div>
-        <div class="li">2026-07-07 05:23:40 - INFO  - [load_task] started | run_id=scheduled__2026-07-06</div>
-        <div class="lk">2026-07-07 05:23:41 - INFO  - [load_task] 8 rows inserted into asset_prices</div>
-        <div class="lk">2026-07-07 05:23:41 - INFO  - [load_task] completed | run_id=scheduled__2026-07-06</div>
-        <div class="ls">════════════════════════════════════════════════════════</div>
+      <div class="topbar-right">
+        <span class="run-badge">● success</span>
+        <span style="color:#a0b8d0;font-size:10px;">2026-07-07 05:23 IST</span>
       </div>
+    </div>
+    <div class="body">
+
+      <div class="schedule-note">
+        <strong>How the @daily schedule works locally:</strong> Both <code>airflow webserver --port 8080</code> and <code>airflow scheduler</code> must be running in separate terminals. The scheduler watches for the next 24-hour interval and fires the DAG automatically. The pipeline can also be triggered manually anytime via the ▶ button in the UI at <strong>localhost:8080</strong>.
+      </div>
+
+      <!-- DAG graph -->
+      <div class="dag-area">
+        <svg width="100%" viewBox="0 0 720 210" style="min-width:480px;display:block;font-family:'JetBrains Mono','Courier New',monospace;">
+          <text x="10" y="16" font-size="9.5" fill="#8896a8">DAGs / asset_price_pipeline / Graph — Run: 2026-07-07, 05:23 IST · Duration: 00:00:33</text>
+          <!-- extract_fx -->
+          <rect x="20" y="34" width="155" height="64" rx="5" fill="#e6f4ec" stroke="#1a7a45" stroke-width="2"/>
+          <text x="97" y="54" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a7a45">extract_fx_task</text>
+          <circle cx="44" cy="71" r="5" fill="#1a7a45"/>
+          <text x="54" y="75" font-size="10" fill="#1a7a45">success</text>
+          <text x="97" y="91" text-anchor="middle" font-size="9" fill="#6b9f7a">PythonOperator</text>
+          <!-- extract_crypto -->
+          <rect x="20" y="124" width="155" height="64" rx="5" fill="#e6f4ec" stroke="#1a7a45" stroke-width="2"/>
+          <text x="97" y="144" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a7a45">extract_crypto_task</text>
+          <circle cx="44" cy="161" r="5" fill="#1a7a45"/>
+          <text x="54" y="165" font-size="10" fill="#1a7a45">success</text>
+          <text x="97" y="181" text-anchor="middle" font-size="9" fill="#6b9f7a">PythonOperator</text>
+          <!-- parallel label -->
+          <text x="97" y="26" text-anchor="middle" font-size="9" fill="#8896a8">run in parallel ↕</text>
+          <!-- arrows -->
+          <line x1="175" y1="66" x2="268" y2="116" stroke="#8896a8" stroke-width="1.5" marker-end="url(#a)"/>
+          <line x1="175" y1="156" x2="268" y2="136" stroke="#8896a8" stroke-width="1.5" marker-end="url(#a)"/>
+          <!-- transform -->
+          <rect x="268" y="96" width="155" height="64" rx="5" fill="#e6f4ec" stroke="#1a7a45" stroke-width="2"/>
+          <text x="345" y="116" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a7a45">transform_task</text>
+          <circle cx="292" cy="133" r="5" fill="#1a7a45"/>
+          <text x="302" y="137" font-size="10" fill="#1a7a45">success</text>
+          <text x="345" y="153" text-anchor="middle" font-size="9" fill="#6b9f7a">PythonOperator</text>
+          <!-- arrow -->
+          <line x1="423" y1="128" x2="498" y2="128" stroke="#8896a8" stroke-width="1.5" marker-end="url(#a)"/>
+          <!-- load -->
+          <rect x="498" y="96" width="155" height="64" rx="5" fill="#e6f4ec" stroke="#1a7a45" stroke-width="2"/>
+          <text x="575" y="116" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a7a45">load_task</text>
+          <circle cx="522" cy="133" r="5" fill="#1a7a45"/>
+          <text x="532" y="137" font-size="10" fill="#1a7a45">success</text>
+          <text x="575" y="153" text-anchor="middle" font-size="9" fill="#6b9f7a">PythonOperator</text>
+          <defs>
+            <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#8896a8" stroke-width="1.5" stroke-linecap="round"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+
+      <!-- meta -->
+      <div class="meta-grid">
+        <div class="meta-cell"><div class="meta-label">Status</div><div class="meta-val ok">● success</div></div>
+        <div class="meta-cell"><div class="meta-label">Run Duration</div><div class="meta-val">00:00:33</div></div>
+        <div class="meta-cell"><div class="meta-label">Schedule</div><div class="meta-val">@daily</div></div>
+        <div class="meta-cell"><div class="meta-label">Executor</div><div class="meta-val">SequentialExecutor</div></div>
+        <div class="meta-cell"><div class="meta-label">Started</div><div class="meta-val">2026-07-07 05:23:08 UTC</div></div>
+        <div class="meta-cell"><div class="meta-label">Airflow Version</div><div class="meta-val">2.10.4</div></div>
+      </div>
+
+      <!-- task cards -->
+      <div class="task-grid">
+        <div class="task-card">
+          <div class="task-header"><span class="task-name">extract_fx_task</span><span class="task-status ts-ok">success</span></div>
+          <div class="task-dur">~1 sec · try 1/3 · PythonOperator</div>
+          <div class="task-desc">Calls Frankfurter API for CAD, EUR, GBP, INR, JPY. Returns None on failure — pipeline continues with crypto-only data gracefully.</div>
+        </div>
+        <div class="task-card">
+          <div class="task-header"><span class="task-name">extract_crypto_task</span><span class="task-status ts-ok">success</span></div>
+          <div class="task-dur">~1 sec · try 1/3 · PythonOperator</div>
+          <div class="task-desc">Calls CoinGecko API for bitcoin, ethereum, solana simultaneously. Both extracts complete before transform begins.</div>
+        </div>
+        <div class="task-card">
+          <div class="task-header"><span class="task-name">transform_task</span><span class="task-status ts-ok">success</span></div>
+          <div class="task-dur">~1 sec · after both extracts · PythonOperator</div>
+          <div class="task-desc">Pulls XCom results. Flattens two JSON shapes into one schema. Validates. Runs anomaly detection vs. yesterday's prices.</div>
+        </div>
+        <div class="task-card">
+          <div class="task-header"><span class="task-name">load_task</span><span class="task-status ts-ok">success</span></div>
+          <div class="task-dur">~30 sec · after transform · PythonOperator</div>
+          <div class="task-desc">Idempotent PostgreSQL insert. PK (asset_symbol, as_of_date) silently skips duplicates. Writes final entry to pipeline.log.</div>
+        </div>
+      </div>
+
+      <div class="code-box" style="margin-top:14px;"><span class="cc"># DAG dependency graph — one line defines the whole execution order:</span>
+[extract_fx_task, extract_crypto_task] >> transform_task >> load_task
+<span class="cc"># retries=2  retry_delay=3min  catchup=False  schedule='@daily'</span></div>
     </div>
   </div>
 </div>
+
+<!-- connector -->
+<div style="display:flex;align-items:center;gap:10px;margin:4px 0 4px 15px;">
+  <div style="width:2px;height:44px;background:var(--border2);margin-left:15px;"></div>
 </div>
-<footer>FX + Crypto Asset Price Monitoring Pipeline </footer>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 2 — PIPELINE TERMINAL
+═══════════════════════════════════════════════════ -->
+<div id="pipeline">
+  <div class="section-header">
+    <div class="step-badge">2</div>
+    <div>
+      <div class="step-title">Pipeline executes — terminal output</div>
+      <div class="step-sub">Extract → Save raw → Transform → Anomaly detection → Load into PostgreSQL</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="mac" style="background:#ff5f57"></div>
+        <div class="mac" style="background:#ffbd2e"></div>
+        <div class="mac" style="background:#28c840"></div>
+        <span class="topbar-title">pipeline.py — FX + Crypto Asset Price Monitoring Pipeline</span>
+      </div>
+    </div>
+    <div class="terminal">
+      <div class="progress-bar" id="prog"></div>
+      <div class="term-body" id="tbody">
+        <div class="line show"><span class="t-prompt">$</span> <span class="t-cmd">python pipeline.py</span><span class="t-cursor" id="tcur"></span></div>
+      </div>
+      <button class="run-btn" id="tbtn" onclick="runDemo()">▶ Run Pipeline Demo</button>
+    </div>
+  </div>
+</div>
+
+<!-- connector -->
+<div style="display:flex;align-items:center;gap:10px;margin:4px 0 4px 15px;">
+  <div style="width:2px;height:44px;background:var(--border2);margin-left:15px;"></div>
+  <div style="font-size:10px;color:var(--text3);margin-left:8px;letter-spacing:.06em;text-transform:uppercase;">load_task completes → data lands in PostgreSQL</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 3 — OUTPUT RESULTS
+═══════════════════════════════════════════════════ -->
+<div id="output">
+  <div class="section-header">
+    <div class="step-badge">3</div>
+    <div>
+      <div class="step-title">Output — data from PostgreSQL</div>
+      <div class="step-sub">6 days of production runs · 54 rows · 2 real anomalies · 0 duplicates ever</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="mac" style="background:#ff5f57"></div>
+        <div class="mac" style="background:#ffbd2e"></div>
+        <div class="mac" style="background:#28c840"></div>
+        <span class="topbar-title">asset_prices — real data · PostgreSQL: asset_rates</span>
+      </div>
+      <div class="topbar-right">
+        <span class="run-badge"><span class="pulse"></span>live db</span>
+      </div>
+    </div>
+    <div class="body">
+
+      <div class="stat-strip">
+        <div class="stat-cell"><span class="stat-val ok"><span class="pulse"></span>LIVE</span><span class="stat-lbl">Status</span></div>
+        <div class="stat-cell"><span class="stat-val">54</span><span class="stat-lbl">Total Rows</span></div>
+        <div class="stat-cell"><span class="stat-val">6</span><span class="stat-lbl">Days Tracked</span></div>
+        <div class="stat-cell"><span class="stat-val">5</span><span class="stat-lbl">FX Symbols</span></div>
+        <div class="stat-cell"><span class="stat-val">3</span><span class="stat-lbl">Crypto Coins</span></div>
+        <div class="stat-cell"><span class="stat-val warn">2</span><span class="stat-lbl">Anomalies</span></div>
+        <div class="stat-cell"><span class="stat-val ok">0</span><span class="stat-lbl">Duplicates</span></div>
+      </div>
+
+      <div class="query-bar">$ <span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">asset_prices</span> <span class="kw">ORDER BY</span> as_of_date <span class="kw">DESC</span>, asset_type, asset_symbol;</div>
+
+      <div style="overflow-x:auto;">
+      <table>
+        <thead><tr><th>asset_type</th><th>asset_symbol</th><th>price</th><th>as_of_date</th><th>fetched_at (UTC)</th><th>is_anomaly</th></tr></thead>
+        <tbody>
+          <tr class="date-sep"><td colspan="6">2026-07-07 · 8 rows · 5 FX + 3 crypto · 0 anomalies · CAD now tracked</td></tr>
+          <tr><td><span class="badge badge-crypto">crypto</span></td><td>bitcoin</td><td class="price">62,839.0000</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:38</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-crypto">crypto</span></td><td>ethereum</td><td class="price">1,758.5400</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:38</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-crypto">crypto</span></td><td>solana</td><td class="price">80.4800</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:38</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>CAD</td><td class="price">1.4223</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:09</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>EUR</td><td class="price">0.87604</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:09</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>GBP</td><td class="price">0.74935</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:09</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>INR</td><td class="price">95.4000</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:09</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>JPY</td><td class="price">162.3400</td><td>2026-07-07</td><td class="ts">2026-07-07T05:23:09</td><td><span class="badge badge-ok">false</span></td></tr>
+
+          <tr class="date-sep"><td colspan="6">2026-07-06 · 8 rows · 5 FX + 3 crypto · 0 anomalies</td></tr>
+          <tr><td><span class="badge badge-crypto">crypto</span></td><td>bitcoin</td><td class="price">62,866.0000</td><td>2026-07-06</td><td class="ts">2026-07-06T07:06:44</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-crypto">crypto</span></td><td>ethereum</td><td class="price">1,768.0200</td><td>2026-07-06</td><td class="ts">2026-07-06T07:06:44</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-crypto">crypto</span></td><td>solana</td><td class="price">80.3000</td><td>2026-07-06</td><td class="ts">2026-07-06T07:06:44</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>CAD</td><td class="price">1.4223</td><td>2026-07-06</td><td class="ts">2026-07-06T20:43:07</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>EUR</td><td class="price">0.87352</td><td>2026-07-06</td><td class="ts">2026-07-06T07:05:45</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>GBP</td><td class="price">0.74878</td><td>2026-07-06</td><td class="ts">2026-07-06T07:05:45</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>INR</td><td class="price">95.2100</td><td>2026-07-06</td><td class="ts">2026-07-06T07:05:45</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>JPY</td><td class="price">161.1500</td><td>2026-07-06</td><td class="ts">2026-07-06T07:05:45</td><td><span class="badge badge-ok">false</span></td></tr>
+
+          <tr class="date-sep"><td colspan="6">2026-07-02 · 7 rows · ⚠ 2 REAL ANOMALIES — ethereum and solana flagged</td></tr>
+          <tr><td><span class="badge badge-crypto">crypto</span></td><td>bitcoin</td><td class="price">61,529.0000</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:19</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr class="flagged"><td><span class="badge badge-crypto">crypto</span></td><td>ethereum</td><td class="price">1,696.6100</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:19</td><td><span class="badge badge-flag">⚠ true</span></td></tr>
+          <tr class="flagged"><td><span class="badge badge-crypto">crypto</span></td><td>solana</td><td class="price">80.8100</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:19</td><td><span class="badge badge-flag">⚠ true</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>EUR</td><td class="price">0.87727</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:18</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>GBP</td><td class="price">0.75151</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:18</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>INR</td><td class="price">95.3900</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:18</td><td><span class="badge badge-ok">false</span></td></tr>
+          <tr><td><span class="badge badge-fx">fx</span></td><td>JPY</td><td class="price">161.5800</td><td>2026-07-02</td><td class="ts">2026-07-02T19:30:18</td><td><span class="badge badge-ok">false</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="tbl-footer">
+        <span>Showing 23 of 54 rows · 6 days tracked · 2 real anomalies (ethereum + solana on 2026-07-02) · 0 duplicates ever</span>
+        <span>Real data from asset_rates · pipeline running since 2026-06-29</span>
+      </div>
+
+      <div class="note">
+        <strong>Real anomalies on July 2:</strong> ethereum and solana both moved more than <span class="hlw">5%</span> vs. the previous stored values. The pipeline <span class="hl">preserved both rows</span> with <code>is_anomaly=True</code> rather than silently dropping them — anomalous data is flagged, not deleted, in financial systems.
+      </div>
+
+      <div class="info-box">
+        <strong>Why FX rates look identical across some days:</strong> The ECB publishes exchange rates once daily at ~15:00 UTC. Runs before that time return the previous business day's rates. Crypto prices (bitcoin, ethereum, solana) update in real time via CoinGecko, so they show genuine movement every day.
+      </div>
+
+      <!-- pipeline.log -->
+      <div class="sec-label" style="margin-top:22px;">Audit log — pipeline.log (most recent run · July 7)</div>
+      <div class="log-wrap">
+        <div class="log-topbar">
+          <div class="mac" style="background:#ff5f57"></div>
+          <div class="mac" style="background:#ffbd2e"></div>
+          <div class="mac" style="background:#28c840"></div>
+          <span style="color:#dce8f5;font-size:10.5px;margin-left:6px;">~/airflow/dags/logs/pipeline.log</span>
+        </div>
+        <div class="log-body">
+          <div class="ls">════════════════════════════════════════════════════════</div>
+          <div class="li">2026-07-07 05:23:08 - INFO  - [extract_fx_task] started | run_id=scheduled__2026-07-06</div>
+          <div class="li">2026-07-07 05:23:09 - INFO  - Fetched FX rates for base=USD:{CAD:1.4223, EUR:0.87604, GBP:0.74935, INR:95.4, JPY:162.34}</div>
+          <div class="li">2026-07-07 05:23:09 - INFO  - [extract_fx_task] raw FX data saved</div>
+          <div class="li">2026-07-07 05:23:09 - INFO  - [extract_fx_task] completed</div>
+          <div class="ls">────────────────────────────────────────────────────────</div>
+          <div class="li">2026-07-07 05:23:37 - INFO  - [extract_crypto_task] started | run_id=scheduled__2026-07-06</div>
+          <div class="li">2026-07-07 05:23:38 - INFO  - Fetched crypto prices: {bitcoin:62839, ethereum:1758.54, solana:80.48}</div>
+          <div class="li">2026-07-07 05:23:38 - INFO  - [extract_crypto_task] raw crypto data saved</div>
+          <div class="li">2026-07-07 05:23:38 - INFO  - [extract_crypto_task] completed</div>
+          <div class="ls">────────────────────────────────────────────────────────</div>
+          <div class="li">2026-07-07 05:23:39 - INFO  - [transform_task] started | run_id=scheduled__2026-07-06</div>
+          <div class="li">2026-07-07 05:23:39 - INFO  - Combined 5 FX rows &amp; 3 Crypto rows =&gt; 8 total</div>
+          <div class="li">2026-07-07 05:23:39 - INFO  - All rows passed basic validation</div>
+          <div class="li">2026-07-07 05:23:39 - INFO  - No anomalies detected</div>
+          <div class="li">2026-07-07 05:23:39 - INFO  - [transform_task] 8 rows | 0 anomalies flagged</div>
+          <div class="li">2026-07-07 05:23:39 - INFO  - [transform_task] completed</div>
+          <div class="ls">────────────────────────────────────────────────────────</div>
+          <div class="li">2026-07-07 05:23:40 - INFO  - [load_task] started | run_id=scheduled__2026-07-06</div>
+          <div class="lk">2026-07-07 05:23:41 - INFO  - [load_task] 8 rows inserted into asset_prices</div>
+          <div class="lk">2026-07-07 05:23:41 - INFO  - [load_task] completed | run_id=scheduled__2026-07-06</div>
+          <div class="ls">════════════════════════════════════════════════════════</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</div><!-- end wrap -->
+
+<footer>Asset Price Monitoring Pipeline <a href="https://github.com/nehaaidasani16/Asset-Price-Monitoring-Pipeline" style="color:var(--blue);text-decoration:none;">GitHub →</a></footer>
+
+<script>
+/* nav active on scroll */
+const secs=document.querySelectorAll('[id]'),links=document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll',()=>{let c='';secs.forEach(s=>{if(window.scrollY>=s.offsetTop-70)c=s.id;});links.forEach(l=>{l.classList.toggle('active',l.getAttribute('href')==='#'+c);});});
+
+/* terminal animation */
+const lines=[
+  {t:350,c:'t-sep',tx:'════════════════════════════════════════════════════'},
+  {t:450,c:'t-engine',tx:'   Asset Price Monitoring Pipeline — daily run'},
+  {t:550,c:'t-sep',tx:'════════════════════════════════════════════════════\n'},
+  {t:850,c:'t-stage',tx:'STAGE 1 / EXTRACT — both APIs called in parallel'},
+  {t:1150,c:'t-info',tx:'[FX]     GET api.frankfurter.dev/v1/latest?base=USD&symbols=CAD,EUR,GBP,INR,JPY'},
+  {t:1600,c:'t-ok',tx:'[FX]     200 OK — 5 currencies received ✓'},
+  {t:1850,c:'t-info',tx:'[CRYPTO] GET api.coingecko.com/v3/simple/price?ids=bitcoin,ethereum,solana'},
+  {t:2300,c:'t-ok',tx:'[CRYPTO] 200 OK — 3 coins received ✓\n'},
+  {t:2650,c:'t-stage',tx:'STAGE 2 / SAVE RAW — before any processing'},
+  {t:2950,c:'t-info',tx:'[STORAGE] USE_S3=true → uploading to AWS S3'},
+  {t:3200,c:'t-ok',tx:'[STORAGE] s3://asset-pipeline-raw/raw/fx/fx_2026-07-07T05:23:09.json ✓'},
+  {t:3450,c:'t-ok',tx:'[STORAGE] s3://asset-pipeline-raw/raw/crypto/crypto_2026-07-07T05:23:38.json ✓\n'},
+  {t:3800,c:'t-stage',tx:'STAGE 3 / TRANSFORM'},
+  {t:4100,c:'t-info',tx:'[XFORM]  flatten_fx()     → 5 rows  (asset_type=fx)'},
+  {t:4350,c:'t-info',tx:'[XFORM]  flatten_crypto() → 3 rows  (asset_type=crypto)'},
+  {t:4600,c:'t-info',tx:'[XFORM]  combined 5 FX + 3 crypto = 8 rows · as_of_date=2026-07-07'},
+  {t:4900,c:'t-ok',tx:'[VALIDATE] all 8 rows passed · no nulls · no bad prices ✓'},
+  {t:5200,c:'t-info',tx:'[ANOMALY] comparing each price vs. yesterday stored value...'},
+  {t:5450,c:'t-dim',tx:'  CAD   1.4223  vs  1.4223  ( +0.00% ) → normal'},
+  {t:5650,c:'t-dim',tx:'  EUR   0.87604 vs  0.87352 ( +0.29% ) → normal'},
+  {t:5850,c:'t-dim',tx:'  GBP   0.74935 vs  0.74878 ( +0.08% ) → normal'},
+  {t:6050,c:'t-dim',tx:'  INR   95.4000 vs  95.2100 ( +0.20% ) → normal'},
+  {t:6250,c:'t-dim',tx:'  JPY   162.340 vs  161.150 ( +0.74% ) → normal'},
+  {t:6450,c:'t-dim',tx:'  bitcoin   62839 vs 62866  ( -0.04% ) → normal'},
+  {t:6650,c:'t-dim',tx:'  ethereum  1758.5 vs 1768.0 ( -0.54% ) → normal'},
+  {t:6850,c:'t-dim',tx:'  solana    80.48 vs  80.30  ( +0.22% ) → normal'},
+  {t:7150,c:'t-ok',tx:'[ANOMALY] 0 anomalies — all 8 assets within 5.0% threshold ✓\n'},
+  {t:7500,c:'t-stage',tx:'STAGE 4 / LOAD'},
+  {t:7750,c:'t-info',tx:'[DB]  Connected to PostgreSQL: asset_rates'},
+  {t:7950,c:'t-info',tx:'[DB]  PK: (asset_symbol, as_of_date) — idempotent insert active'},
+  {t:8150,c:'t-ok',tx:'[DB]  bitcoin   2026-07-07 → inserted ✓'},
+  {t:8300,c:'t-ok',tx:'[DB]  ethereum  2026-07-07 → inserted ✓'},
+  {t:8450,c:'t-ok',tx:'[DB]  solana    2026-07-07 → inserted ✓'},
+  {t:8600,c:'t-ok',tx:'[DB]  CAD       2026-07-07 → inserted ✓'},
+  {t:8750,c:'t-ok',tx:'[DB]  EUR       2026-07-07 → inserted ✓'},
+  {t:8900,c:'t-ok',tx:'[DB]  GBP       2026-07-07 → inserted ✓'},
+  {t:9050,c:'t-ok',tx:'[DB]  INR       2026-07-07 → inserted ✓'},
+  {t:9200,c:'t-ok',tx:'[DB]  JPY       2026-07-07 → inserted ✓'},
+  {t:9450,c:'t-dim',tx:'[DB]  duplicate check: 0 rows skipped\n'},
+  {t:9800,c:'t-sep',tx:'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'},
+  {t:9900,c:'t-result',tx:'[RESULT] Pipeline run complete.'},
+  {t:10050,c:'t-ok',tx:'[RESULT] Rows loaded        : 8'},
+  {t:10200,c:'t-ok',tx:'[RESULT] Anomalies flagged  : 0'},
+  {t:10350,c:'t-ok',tx:'[RESULT] Duplicates skipped : 0'},
+  {t:10500,c:'t-ok',tx:'[RESULT] Sources failed     : 0'},
+  {t:10650,c:'t-sep',tx:'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'},
+  {t:10950,c:'t-info',tx:'[ENGINE] Orchestrated by Apache Airflow 2.10.4 · @daily'},
+  {t:11150,c:'t-info',tx:'[ENGINE] pytest 12/12 passing · GitHub Actions CI/CD'},
+  {t:11350,c:'t-info',tx:'[ENGINE] Raw data archived: AWS S3 · DB: PostgreSQL asset_rates\n'},
+  {t:11600,c:'t-prompt',tx:'$ ▊'},
+];
+function runDemo(){
+  const body=document.getElementById('tbody'),btn=document.getElementById('tbtn'),
+        cur=document.getElementById('tcur'),prog=document.getElementById('prog');
+  btn.disabled=true;btn.textContent='⏳ Running...';cur.style.display='none';
+  const total=lines[lines.length-1].t+400;
+  lines.forEach(l=>{
+    setTimeout(()=>{
+      const d=document.createElement('div');
+      d.className='line '+l.c;d.textContent=l.tx;
+      body.appendChild(d);
+      requestAnimationFrame(()=>d.classList.add('show'));
+      body.scrollTop=body.scrollHeight;
+      prog.style.width=((l.t/total)*100)+'%';
+    },l.t);
+  });
+  setTimeout(()=>{
+    prog.style.width='100%';
+    btn.textContent='↺ Run Again';
+    btn.disabled=false;
+    btn.onclick=()=>location.reload();
+  },total);
+}
+</script>
 </body>
 </html>
