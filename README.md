@@ -2,6 +2,10 @@
 
 **Automated ETL pipeline that fetches live FX rates and crypto prices from two public APIs daily, validates and anomaly-checks the data, loads it into PostgreSQL, archives raw data to AWS S3, and is orchestrated by Apache Airflow with full CI/CD via GitHub Actions.**
 
+
+Project Demo (index.html) : https://nehaaidasani16.github.io/Asset-Price-Monitoring-Pipeline/
+
+
 ---
 
 ## Architecture
