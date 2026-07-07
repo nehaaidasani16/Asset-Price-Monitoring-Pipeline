@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # FX + Crypto Asset Price Monitoring Pipeline
 
 **Automated ETL pipeline that fetches live FX rates and crypto prices from two public APIs daily, validates and anomaly-checks the data, loads it into PostgreSQL, archives raw data to AWS S3, and is orchestrated by Apache Airflow with full CI/CD via GitHub Actions.**
@@ -117,3 +118,6 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 **Why flag anomalies instead of dropping them?** Silent data dropping is dangerous in financial data. A price that moved 15% might be a genuine market event, not bad data. Flagging preserves the row while signalling that human review is needed.
 
 **Why feature-flag S3 with `USE_S3`?** Allows the pipeline to run in any environment (local dev, CI/CD, production) without code changes — only a config value changes.
+=======
+ # Asset Price Pipeline
+>>>>>>> 0422c8fc4eba9f2633fdfd0fbfe56b8199d9cdd6
