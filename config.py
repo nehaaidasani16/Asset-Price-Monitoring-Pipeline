@@ -5,7 +5,7 @@ load_dotenv()
 
 # FX
 BASE_CURRENCY = "USD"
-TARGET_CURRENCIES = ["INR", "EUR", "GBP", "JPY", "AED"]
+TARGET_CURRENCIES = ["INR", "EUR", "GBP", "JPY", "CAD"]
 
 # CRYPTO
 
